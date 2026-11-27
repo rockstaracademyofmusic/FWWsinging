@@ -16,6 +16,7 @@
       --text-muted: #94a3b8;
       --accent: #10b981;
       --gold: #fbbf24;
+      --warn: #f59e0b;
       --border: #334155;
     }
 
@@ -62,6 +63,13 @@
       color: #f8fafc;
     }
 
+    .sync-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
     .sync-status {
       font-size: 0.82rem;
       color: #34d399;
@@ -69,6 +77,21 @@
       padding: 4px 10px;
       border-radius: 999px;
       border: 1px solid var(--border);
+    }
+
+    .btn-refresh {
+      background: var(--card-light);
+      color: #f8fafc;
+      border: 1px solid #475569;
+      padding: 4px 12px;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      cursor: pointer;
+    }
+
+    .btn-refresh:hover {
+      background: var(--primary);
+      border-color: var(--primary);
     }
 
     /* Top 5 Separated Box */
@@ -237,6 +260,59 @@
       border-radius: 999px;
       font-weight: 600;
       font-size: 1.05rem;
+    }
+
+    /* Unsaved Alert Banner */
+    .unsaved-alert {
+      display: none;
+      margin-bottom: 14px;
+      padding: 14px 16px;
+      border-radius: 14px;
+      background: rgba(245, 158, 11, 0.14);
+      border: 1px solid #f59e0b;
+      color: #fde68a;
+    }
+
+    .unsaved-alert-title {
+      font-weight: 600;
+      margin-bottom: 10px;
+      font-size: 0.98rem;
+    }
+
+    .unsaved-alert-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .btn-alert-save {
+      background: #10b981;
+      color: #06281e;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 10px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .btn-alert-discard {
+      background: var(--card-light);
+      color: #f8fafc;
+      border: 1px solid #64748b;
+      padding: 8px 14px;
+      border-radius: 10px;
+      font-weight: 500;
+      cursor: pointer;
+    }
+
+    .btn-alert-stay {
+      background: transparent;
+      color: #fde68a;
+      border: 1px solid #f59e0b;
+      padding: 8px 14px;
+      border-radius: 10px;
+      font-weight: 500;
+      cursor: pointer;
     }
 
     /* Stable Video Stage */
@@ -412,7 +488,7 @@
       color: #d1fae5;
     }
 
-    /* Scoring Bar with Up/Down Arrows */
+    /* Scoring Bar */
     .scoring-panel {
       display: none;
       margin-top: 18px;
@@ -421,6 +497,11 @@
       border-radius: 16px;
       border: 1px solid #475569;
       animation: fadeIn 0.2s ease;
+    }
+
+    .scoring-panel.editing-active {
+      border-color: #10b981;
+      box-shadow: 0 0 0 1px rgba(16, 185, 129, 0.35);
     }
 
     .scoring-header {
@@ -447,11 +528,28 @@
       font-size: 1.05rem;
     }
 
+    .mode-pill {
+      font-size: 0.8rem;
+      font-weight: 600;
+      padding: 3px 10px;
+      border-radius: 999px;
+      background: rgba(148, 163, 184, 0.16);
+      color: #cbd5e1;
+      border: 1px solid #64748b;
+    }
+
+    .mode-pill.editing {
+      background: rgba(16, 185, 129, 0.18);
+      color: #34d399;
+      border-color: #10b981;
+    }
+
     .scoring-header-right {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 8px;
       margin-left: auto;
+      flex-wrap: wrap;
     }
 
     .total-badge {
@@ -462,12 +560,40 @@
       font-weight: 600;
     }
 
+    .btn-edit-toggle {
+      background: linear-gradient(135deg, #6366f1, #4f46e5);
+      color: #fff;
+      border: none;
+      padding: 7px 16px;
+      border-radius: 9px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .btn-edit-toggle.saving-mode {
+      background: linear-gradient(135deg, #10b981, #059669);
+      color: #052219;
+    }
+
+    .btn-cancel-edit {
+      display: none;
+      background: var(--card-light);
+      color: #f8fafc;
+      border: 1px solid #64748b;
+      padding: 7px 12px;
+      border-radius: 9px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      cursor: pointer;
+    }
+
     .btn-switch-teacher {
       background: var(--card-light);
       color: #f8fafc;
       border: 1px solid #64748b;
-      padding: 6px 12px;
-      border-radius: 8px;
+      padding: 7px 12px;
+      border-radius: 9px;
       font-size: 0.85rem;
       font-weight: 500;
       cursor: pointer;
@@ -515,7 +641,7 @@
       color: var(--text-muted);
     }
 
-    /* Score Stepper (Box + Up/Down Arrows) */
+    /* Score Stepper */
     .score-stepper {
       display: flex;
       align-items: center;
@@ -526,15 +652,20 @@
       width: 74px;
       height: 48px;
       background: #020617;
-      border: 2px solid var(--primary);
+      border: 2px solid #475569;
       border-radius: 10px;
       display: flex;
       align-items: center;
       justify-content: center;
       font-size: 1.25rem;
       font-weight: 700;
-      color: #fff;
+      color: #cbd5e1;
       user-select: none;
+    }
+
+    .editing-active .score-display {
+      border-color: #10b981;
+      color: #fff;
     }
 
     .stepper-arrows {
@@ -559,13 +690,18 @@
       user-select: none;
     }
 
-    .arrow-up-down:hover {
+    .arrow-up-down:hover:not(:disabled) {
       background: var(--primary);
       border-color: var(--primary);
     }
 
-    .arrow-up-down:active {
+    .arrow-up-down:active:not(:disabled) {
       transform: scale(0.92);
+    }
+
+    .arrow-up-down:disabled {
+      opacity: 0.25;
+      cursor: not-allowed;
     }
 
     .save-notice {
@@ -587,7 +723,10 @@
   <div class="container" id="summaryBoard">
     <div class="summary-header">
       <h2>สรุปผลคะแนน</h2>
-      <div class="sync-status" id="syncStatus">กำลังซิงค์กับ Google Sheets...</div>
+      <div class="sync-controls">
+        <div class="sync-status" id="syncStatus">พร้อมใช้งาน</div>
+        <button class="btn-refresh" onclick="fetchScoresFromSheet()">↻ ดึงคะแนนล่าสุด</button>
+      </div>
     </div>
 
     <!-- แยกอันดับ 5 คนแรก (แสดงเมื่อมีครูอย่างน้อย 1 ท่านให้คะแนนครบทั้ง 15 คน) -->
@@ -614,12 +753,24 @@
       <div class="student-badge" id="studentLabel">1. ต้นปาล์ม 5/1 — [1 / 15]</div>
     </div>
 
+    <!-- กล่องเตือนเมื่อกำลังแก้ไขคะแนนอยู่แล้วกดเปลี่ยนคลิป -->
+    <div class="unsaved-alert" id="unsavedAlert">
+      <div class="unsaved-alert-title" id="unsavedAlertText">
+        ⚠️ คุณกำลังแก้ไขคะแนนอยู่ กรุณากด "บันทึกคะแนน" ก่อนเปลี่ยนคลิป
+      </div>
+      <div class="unsaved-alert-actions">
+        <button class="btn-alert-save" onclick="saveAndNavigate()">บันทึกคะแนนแล้วเปลี่ยนคลิป</button>
+        <button class="btn-alert-discard" onclick="discardAndNavigate()">ไม่บันทึกและเปลี่ยนคลิป</button>
+        <button class="btn-alert-stay" onclick="cancelNavigationPrompt()">อยู่หน้านี้ต่อ</button>
+      </div>
+    </div>
+
     <div class="video-stage">
-      <button class="nav-arrow" id="prevBtn" onclick="changeStudent(-1)" title="คนก่อนหน้า">◀</button>
+      <button class="nav-arrow" id="prevBtn" onclick="requestChangeStudent(-1)" title="คนก่อนหน้า">◀</button>
       <div class="video-wrapper">
         <iframe id="videoFrame" allow="autoplay; fullscreen" allowfullscreen></iframe>
       </div>
-      <button class="nav-arrow" id="nextBtn" onclick="changeStudent(1)" title="คนถัดไป">▶</button>
+      <button class="nav-arrow" id="nextBtn" onclick="requestChangeStudent(1)" title="คนถัดไป">▶</button>
     </div>
 
     <div class="action-area">
@@ -636,10 +787,13 @@
         <div class="scoring-header">
           <div class="scoring-header-left">
             <span id="activeTeacherTitle">ผู้ให้คะแนน: -</span>
+            <span class="mode-pill" id="modePill">โหมดดูคะแนน (แก้ไขไม่ได้)</span>
             <div class="total-badge" id="totalScoreBadge">รวมครูคนนี้: 0.0 / 40.0 คะแนน</div>
           </div>
           <div class="scoring-header-right">
-            <button class="btn-switch-teacher" onclick="openTeacherSelect()">ครูท่านอื่น</button>
+            <button class="btn-edit-toggle" id="editToggleBtn" onclick="handleScoreActionButton()">ให้คะแนน</button>
+            <button class="btn-cancel-edit" id="cancelEditBtn" onclick="cancelEditing()">ยกเลิก</button>
+            <button class="btn-switch-teacher" onclick="requestSwitchTeacher()">ครูท่านอื่น</button>
           </div>
         </div>
 
@@ -653,8 +807,8 @@
             <div class="score-stepper">
               <div class="score-display" id="score-pitch">0.0</div>
               <div class="stepper-arrows">
-                <button class="arrow-up-down" onclick="adjustScore('pitch', 0.5)" title="เพิ่ม 0.5">▲</button>
-                <button class="arrow-up-down" onclick="adjustScore('pitch', -0.5)" title="ลด 0.5">▼</button>
+                <button class="arrow-up-down stepper-btn" onclick="adjustDraftScore('pitch', 0.5)" title="เพิ่ม 0.5" disabled>▲</button>
+                <button class="arrow-up-down stepper-btn" onclick="adjustDraftScore('pitch', -0.5)" title="ลด 0.5" disabled>▼</button>
               </div>
             </div>
           </div>
@@ -668,8 +822,8 @@
             <div class="score-stepper">
               <div class="score-display" id="score-articulation">0.0</div>
               <div class="stepper-arrows">
-                <button class="arrow-up-down" onclick="adjustScore('articulation', 0.5)" title="เพิ่ม 0.5">▲</button>
-                <button class="arrow-up-down" onclick="adjustScore('articulation', -0.5)" title="ลด 0.5">▼</button>
+                <button class="arrow-up-down stepper-btn" onclick="adjustDraftScore('articulation', 0.5)" title="เพิ่ม 0.5" disabled>▲</button>
+                <button class="arrow-up-down stepper-btn" onclick="adjustDraftScore('articulation', -0.5)" title="ลด 0.5" disabled>▼</button>
               </div>
             </div>
           </div>
@@ -683,8 +837,8 @@
             <div class="score-stepper">
               <div class="score-display" id="score-confidence">0.0</div>
               <div class="stepper-arrows">
-                <button class="arrow-up-down" onclick="adjustScore('confidence', 0.5)" title="เพิ่ม 0.5">▲</button>
-                <button class="arrow-up-down" onclick="adjustScore('confidence', -0.5)" title="ลด 0.5">▼</button>
+                <button class="arrow-up-down stepper-btn" onclick="adjustDraftScore('confidence', 0.5)" title="เพิ่ม 0.5" disabled>▲</button>
+                <button class="arrow-up-down stepper-btn" onclick="adjustDraftScore('confidence', -0.5)" title="ลด 0.5" disabled>▼</button>
               </div>
             </div>
           </div>
@@ -698,21 +852,21 @@
             <div class="score-stepper">
               <div class="score-display" id="score-charm">0.0</div>
               <div class="stepper-arrows">
-                <button class="arrow-up-down" onclick="adjustScore('charm', 0.5)" title="เพิ่ม 0.5">▲</button>
-                <button class="arrow-up-down" onclick="adjustScore('charm', -0.5)" title="ลด 0.5">▼</button>
+                <button class="arrow-up-down stepper-btn" onclick="adjustDraftScore('charm', 0.5)" title="เพิ่ม 0.5" disabled>▲</button>
+                <button class="arrow-up-down stepper-btn" onclick="adjustDraftScore('charm', -0.5)" title="ลด 0.5" disabled>▼</button>
               </div>
             </div>
           </div>
         </div>
 
-        <div class="save-notice" id="saveNotice">✓ ซิงค์กับ Google Sheets อัตโนมัติ</div>
+        <div class="save-notice" id="saveNotice">กด "ให้คะแนน" เพื่อเปิดโหมดแก้ไขคะแนน</div>
       </div>
     </div>
   </div>
 
   <script>
     const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyG3T30U6LQzEKo625dkIdCTwddgGq_z5zEx5Gig4iCCIT-yTrFpakczi511o9Xkhai/exec";
-    const POLL_INTERVAL_MS = 6000;
+    const POLL_INTERVAL_MS = 10000;
 
     const students = [
       { id: "001", name: "ต้นปาล์ม 5/1", fileId: "1DUZ6sXYISPPKtsKQBkbMQFwCM4g0nlxX" },
@@ -733,19 +887,17 @@
     ];
 
     const teachers = ["ครูอ๋อง", "ครูนะ", "ครูก้อง", "ครูแม็ก"];
-    const STORAGE_KEY = "singing_contest_scores_v2";
+    const STORAGE_KEY = "singing_contest_scores_v3";
 
     let currentIndex = 0;
     let selectedTeacher = null;
+    let isEditing = false;
+    let draftScore = null;
+    let pendingAction = null;
     let scoresData = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
-    const dirtyKeys = new Set();
-
-    function makeKey(studentId, teacherName) {
-      return `${studentId}__${teacherName}`;
-    }
 
     function fmt(num) {
-      return (Math.round(num * 10) / 10).toFixed(1);
+      return (Math.round((Number(num) || 0) * 10) / 10).toFixed(1);
     }
 
     function setSyncStatus(text, isError = false) {
@@ -754,39 +906,43 @@
       el.style.color = isError ? "#f87171" : "#34d399";
     }
 
-    function getStudentScoreObj(studentId, teacherName) {
-      if (!scoresData[studentId]) scoresData[studentId] = {};
-      if (!scoresData[studentId][teacherName]) {
-        scoresData[studentId][teacherName] = {
-          pitch: 0,
-          articulation: 0,
-          confidence: 0,
-          charm: 0,
-          graded: false
-        };
+    function getSavedRecord(studentId, teacherName) {
+      const rec = scoresData[studentId]?.[teacherName];
+      if (!rec) {
+        return { pitch: 0, articulation: 0, confidence: 0, charm: 0, graded: false };
       }
-      const obj = scoresData[studentId][teacherName];
-      if (typeof obj.charm !== "number") obj.charm = 0;
-      return obj;
+      return {
+        pitch: Number(rec.pitch) || 0,
+        articulation: Number(rec.articulation) || 0,
+        confidence: Number(rec.confidence) || 0,
+        charm: Number(rec.charm) || 0,
+        graded: Boolean(rec.graded)
+      };
     }
 
-    function getTeacherTotal(studentId, teacherName) {
-      const rec = scoresData[studentId]?.[teacherName];
+    function getActiveDisplayRecord(studentId, teacherName) {
+      if (isEditing && draftScore && students[currentIndex]?.id === studentId && selectedTeacher === teacherName) {
+        return draftScore;
+      }
+      return getSavedRecord(studentId, teacherName);
+    }
+
+    function sumRecord(rec) {
       if (!rec) return 0;
       return (
-        (rec.pitch || 0) +
-        (rec.articulation || 0) +
-        (rec.confidence || 0) +
-        (rec.charm || 0)
+        (Number(rec.pitch) || 0) +
+        (Number(rec.articulation) || 0) +
+        (Number(rec.confidence) || 0) +
+        (Number(rec.charm) || 0)
       );
     }
 
     function getAllTeachersTotal(studentId) {
-      return teachers.reduce((sum, t) => sum + getTeacherTotal(studentId, t), 0);
+      return teachers.reduce((sum, t) => sum + sumRecord(scoresData[studentId]?.[t]), 0);
     }
 
     function getGradedTeachersCount(studentId) {
-      return teachers.filter((t) => scoresData[studentId]?.[t]?.graded).length;
+      return teachers.filter((t) => Boolean(scoresData[studentId]?.[t]?.graded)).length;
     }
 
     function hasAtLeastOneTeacherCompletedAll() {
@@ -800,14 +956,10 @@
       renderSummaryBoard();
     }
 
-    async function pushScoreToSheet(studentId, teacherName) {
-      const key = makeKey(studentId, teacherName);
-      dirtyKeys.add(key);
-
+    async function pushScoreToSheet(studentId, teacherName, rec) {
       const student = students.find((s) => s.id === studentId);
-      const rec = getStudentScoreObj(studentId, teacherName);
-
       setSyncStatus("กำลังบันทึกขึ้นชีต...");
+
       try {
         const res = await fetch(APPS_SCRIPT_URL, {
           method: "POST",
@@ -820,60 +972,103 @@
             articulation: rec.articulation,
             confidence: rec.confidence,
             charm: rec.charm,
-            graded: rec.graded
+            graded: true
           })
         });
         const json = await res.json();
         if (json && json.ok) {
-          dirtyKeys.delete(key);
           setSyncStatus("บันทึกลงชีตแล้ว");
-        } else {
-          setSyncStatus("บันทึกชีตไม่สำเร็จ", true);
+          return true;
         }
+        setSyncStatus("บันทึกชีตไม่สำเร็จ", true);
+        return false;
       } catch (err) {
         setSyncStatus("บันทึกชั่วคราวในเครื่อง", true);
+        return false;
       }
     }
 
-    function mergeRemoteScores(remoteData) {
-      const merged = {};
-      Object.keys(remoteData || {}).forEach((stId) => {
-        merged[stId] = { ...remoteData[stId] };
-      });
-
-      dirtyKeys.forEach((key) => {
-        const [stId, teacherName] = key.split("__");
-        if (scoresData[stId] && scoresData[stId][teacherName]) {
-          if (!merged[stId]) merged[stId] = {};
-          merged[stId][teacherName] = { ...scoresData[stId][teacherName] };
-        }
-      });
-
-      return merged;
-    }
-
     async function fetchScoresFromSheet() {
+      if (isEditing) return;
+
       try {
         const res = await fetch(`${APPS_SCRIPT_URL}?t=${Date.now()}`, { cache: "no-store" });
         const json = await res.json();
         if (json && json.ok && json.scoresData) {
-          scoresData = mergeRemoteScores(json.scoresData);
+          scoresData = json.scoresData;
           localStorage.setItem(STORAGE_KEY, JSON.stringify(scoresData));
           renderSummaryBoard();
           if (selectedTeacher) {
-            updateScoreDisplay();
+            renderScoringPanel();
           }
-          if (dirtyKeys.size === 0) {
-            setSyncStatus("ซิงค์ออนไลน์เรียบร้อย");
-          }
+          setSyncStatus("ซิงค์ออนไลน์เรียบร้อย");
         }
       } catch (err) {
         setSyncStatus("รอเชื่อมต่อชีต...", true);
       }
     }
 
+    function hideUnsavedAlert() {
+      pendingAction = null;
+      document.getElementById("unsavedAlert").style.display = "none";
+    }
+
+    function showUnsavedAlert(message, actionFn) {
+      pendingAction = actionFn;
+      document.getElementById("unsavedAlertText").textContent = message;
+      document.getElementById("unsavedAlert").style.display = "block";
+    }
+
+    function cancelNavigationPrompt() {
+      hideUnsavedAlert();
+    }
+
+    async function saveAndNavigate() {
+      const fn = pendingAction;
+      hideUnsavedAlert();
+      await commitDraftScore();
+      if (typeof fn === "function") fn();
+    }
+
+    function discardAndNavigate() {
+      const fn = pendingAction;
+      hideUnsavedAlert();
+      isEditing = false;
+      draftScore = null;
+      if (typeof fn === "function") fn();
+    }
+
+    function requestChangeStudent(step) {
+      const nextIdx = currentIndex + step;
+      if (nextIdx < 0 || nextIdx >= students.length) return;
+
+      if (isEditing) {
+        showUnsavedAlert(
+          '⚠️ คุณกำลังแก้ไขคะแนนอยู่ กรุณากด "บันทึกคะแนน" ก่อนเปลี่ยนคลิป',
+          () => loadStudent(nextIdx)
+        );
+        return;
+      }
+      loadStudent(nextIdx);
+    }
+
+    function requestSwitchTeacher() {
+      if (isEditing) {
+        showUnsavedAlert(
+          '⚠️ คุณกำลังแก้ไขคะแนนอยู่ กรุณากด "บันทึกคะแนน" ก่อนเปลี่ยนผู้ให้คะแนน',
+          () => openTeacherSelect()
+        );
+        return;
+      }
+      openTeacherSelect();
+    }
+
     function loadStudent(index) {
+      hideUnsavedAlert();
+      isEditing = false;
+      draftScore = null;
       currentIndex = index;
+
       const student = students[currentIndex];
       const iframe = document.getElementById("videoFrame");
 
@@ -888,32 +1083,22 @@
 
       document.getElementById("prevBtn").disabled = currentIndex === 0;
       document.getElementById("nextBtn").disabled = currentIndex === students.length - 1;
-
       document.getElementById("teacherPanel").style.display = "none";
 
       if (selectedTeacher) {
-        const record = getStudentScoreObj(student.id, selectedTeacher);
-        record.graded = true;
-        saveLocalCache();
-        pushScoreToSheet(student.id, selectedTeacher);
         document.getElementById("startScoreBtn").style.display = "none";
-        document.getElementById("activeTeacherTitle").textContent = `ผู้ให้คะแนน: ${selectedTeacher}`;
         document.getElementById("scoringPanel").style.display = "block";
-        updateScoreDisplay();
+        renderScoringPanel();
       } else {
         document.getElementById("startScoreBtn").style.display = "inline-block";
         document.getElementById("scoringPanel").style.display = "none";
       }
     }
 
-    function changeStudent(step) {
-      const nextIdx = currentIndex + step;
-      if (nextIdx >= 0 && nextIdx < students.length) {
-        loadStudent(nextIdx);
-      }
-    }
-
     function openTeacherSelect() {
+      hideUnsavedAlert();
+      isEditing = false;
+      draftScore = null;
       document.getElementById("startScoreBtn").style.display = "none";
       document.getElementById("scoringPanel").style.display = "none";
       document.getElementById("teacherPanel").style.display = "block";
@@ -926,9 +1111,9 @@
       grid.innerHTML = "";
 
       teachers.forEach((teacher) => {
-        const record = scoresData[student.id]?.[teacher];
-        const isGraded = record && record.graded;
-        const total = isGraded ? getTeacherTotal(student.id, teacher) : 0;
+        const rec = scoresData[student.id]?.[teacher];
+        const isGraded = Boolean(rec && rec.graded);
+        const total = isGraded ? sumRecord(rec) : 0;
 
         const btn = document.createElement("button");
         btn.className = "teacher-btn" + (selectedTeacher === teacher ? " active" : "");
@@ -943,54 +1128,115 @@
 
     function selectTeacher(teacher) {
       selectedTeacher = teacher;
-
-      const student = students[currentIndex];
-      const record = getStudentScoreObj(student.id, teacher);
-      record.graded = true;
-      saveLocalCache();
-      pushScoreToSheet(student.id, teacher);
+      isEditing = false;
+      draftScore = null;
 
       document.getElementById("teacherPanel").style.display = "none";
-      document.getElementById("activeTeacherTitle").textContent = `ผู้ให้คะแนน: ${teacher}`;
       document.getElementById("scoringPanel").style.display = "block";
-      updateScoreDisplay();
+      renderScoringPanel();
     }
 
-    function adjustScore(category, delta) {
+    function startEditingScore() {
+      if (!selectedTeacher) return;
+      hideUnsavedAlert();
+      const student = students[currentIndex];
+      const currentSaved = getSavedRecord(student.id, selectedTeacher);
+      draftScore = { ...currentSaved, graded: true };
+      isEditing = true;
+      renderScoringPanel();
+    }
+
+    function cancelEditing() {
+      hideUnsavedAlert();
+      isEditing = false;
+      draftScore = null;
+      renderScoringPanel();
+      document.getElementById("saveNotice").textContent = "ยกเลิกการแก้ไขคะแนนแล้ว";
+    }
+
+    function adjustDraftScore(category, delta) {
+      if (!isEditing || !draftScore) return;
+      let nextVal = Math.round(((Number(draftScore[category]) || 0) + delta) * 10) / 10;
+      if (nextVal < 0) nextVal = 0;
+      if (nextVal > 10) nextVal = 10;
+      draftScore[category] = nextVal;
+      renderScoringPanel();
+    }
+
+    async function commitDraftScore() {
+      if (!selectedTeacher || !draftScore) return;
+      const student = students[currentIndex];
+      const finalRecord = {
+        pitch: Number(draftScore.pitch) || 0,
+        articulation: Number(draftScore.articulation) || 0,
+        confidence: Number(draftScore.confidence) || 0,
+        charm: Number(draftScore.charm) || 0,
+        graded: true
+      };
+
+      if (!scoresData[student.id]) scoresData[student.id] = {};
+      scoresData[student.id][selectedTeacher] = finalRecord;
+
+      isEditing = false;
+      draftScore = null;
+      saveLocalCache();
+      renderScoringPanel();
+
+      await pushScoreToSheet(student.id, selectedTeacher, finalRecord);
+      document.getElementById("saveNotice").textContent = "✓ บันทึกคะแนนและซิงค์ขึ้น Google Sheets เรียบร้อย";
+    }
+
+    function handleScoreActionButton() {
+      if (!isEditing) {
+        startEditingScore();
+      } else {
+        commitDraftScore();
+      }
+    }
+
+    function renderScoringPanel() {
       if (!selectedTeacher) return;
       const student = students[currentIndex];
-      const record = getStudentScoreObj(student.id, selectedTeacher);
+      const displayRec = getActiveDisplayRecord(student.id, selectedTeacher);
 
-      let newVal = Math.round((record[category] + delta) * 10) / 10;
-      if (newVal < 0) newVal = 0;
-      if (newVal > 10) newVal = 10;
+      document.getElementById("activeTeacherTitle").textContent = `ผู้ให้คะแนน: ${selectedTeacher}`;
+      document.getElementById("score-pitch").textContent = fmt(displayRec.pitch);
+      document.getElementById("score-articulation").textContent = fmt(displayRec.articulation);
+      document.getElementById("score-confidence").textContent = fmt(displayRec.confidence);
+      document.getElementById("score-charm").textContent = fmt(displayRec.charm);
 
-      record[category] = newVal;
-      record.graded = true;
-      saveLocalCache();
-      pushScoreToSheet(student.id, selectedTeacher);
-
-      updateScoreDisplay();
-
-      const notice = document.getElementById("saveNotice");
-      notice.textContent = "✓ กำลังบันทึกลง Google Sheets...";
-      setTimeout(() => {
-        notice.textContent = "✓ ซิงค์กับ Google Sheets อัตโนมัติ";
-      }, 1200);
-    }
-
-    function updateScoreDisplay() {
-      const student = students[currentIndex];
-      const record = getStudentScoreObj(student.id, selectedTeacher);
-
-      document.getElementById("score-pitch").textContent = fmt(record.pitch);
-      document.getElementById("score-articulation").textContent = fmt(record.articulation);
-      document.getElementById("score-confidence").textContent = fmt(record.confidence);
-      document.getElementById("score-charm").textContent = fmt(record.charm);
-
-      const total = getTeacherTotal(student.id, selectedTeacher);
+      const total = sumRecord(displayRec);
       document.getElementById("totalScoreBadge").textContent =
         `รวมครูคนนี้: ${fmt(total)} / 40.0 คะแนน`;
+
+      const panel = document.getElementById("scoringPanel");
+      const modePill = document.getElementById("modePill");
+      const actionBtn = document.getElementById("editToggleBtn");
+      const cancelBtn = document.getElementById("cancelEditBtn");
+      const notice = document.getElementById("saveNotice");
+      const stepperBtns = document.querySelectorAll(".stepper-btn");
+
+      stepperBtns.forEach((btn) => {
+        btn.disabled = !isEditing;
+      });
+
+      if (isEditing) {
+        panel.classList.add("editing-active");
+        modePill.textContent = "กำลังแก้ไขคะแนน";
+        modePill.classList.add("editing");
+        actionBtn.textContent = "บันทึกคะแนน";
+        actionBtn.classList.add("saving-mode");
+        cancelBtn.style.display = "inline-block";
+        notice.textContent = 'กำลังปรับคะแนน — กด "บันทึกคะแนน" เพื่อส่งขึ้น Google Sheets';
+      } else {
+        panel.classList.remove("editing-active");
+        modePill.textContent = "โหมดดูคะแนน (แก้ไขไม่ได้)";
+        modePill.classList.remove("editing");
+        actionBtn.textContent = "ให้คะแนน";
+        actionBtn.classList.remove("saving-mode");
+        cancelBtn.style.display = "none";
+        notice.textContent = 'กด "ให้คะแนน" เพื่อปลดล็อกแก้ไขคะแนน';
+      }
     }
 
     function renderSummaryBoard() {
