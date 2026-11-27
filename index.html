@@ -1,0 +1,935 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ระบบให้คะแนนการประกวดร้องเพลง</title>
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #4f46e5;
+      --primary-hover: #4338ca;
+      --bg: #0f172a;
+      --card: #1e293b;
+      --card-light: #334155;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --accent: #10b981;
+      --gold: #fbbf24;
+      --border: #334155;
+    }
+
+    * {
+      box-sizing: border-box;
+      font-family: 'Prompt', sans-serif;
+    }
+
+    body {
+      margin: 0;
+      padding: 16px;
+      background-color: var(--bg);
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      gap: 20px;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 920px;
+      background: var(--card);
+      border-radius: 20px;
+      padding: 22px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+      border: 1px solid var(--border);
+    }
+
+    /* Summary Board Layout */
+    .summary-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+    }
+
+    .summary-header h2 {
+      margin: 0;
+      font-size: 1.3rem;
+      color: #f8fafc;
+    }
+
+    /* Top 5 Separated Box */
+    .top5-box {
+      background: linear-gradient(145deg, rgba(251, 191, 36, 0.12), rgba(79, 70, 229, 0.14));
+      border: 1px solid rgba(251, 191, 36, 0.45);
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 18px;
+    }
+
+    .top5-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-weight: 600;
+      color: var(--gold);
+      margin-bottom: 12px;
+      font-size: 1.05rem;
+    }
+
+    .waiting-rank-box {
+      background: rgba(15, 23, 42, 0.7);
+      border: 1px dashed #64748b;
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+      color: #cbd5e1;
+      font-size: 1.05rem;
+      font-weight: 500;
+    }
+
+    .top5-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 10px;
+    }
+
+    @media (max-width: 820px) {
+      .top5-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 480px) {
+      .top5-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .top5-card {
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid rgba(148, 163, 184, 0.25);
+      border-radius: 12px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 6px;
+    }
+
+    .top5-card.rank-1 {
+      border-color: #fbbf24;
+      box-shadow: 0 0 15px rgba(251, 191, 36, 0.2);
+    }
+
+    .rank-pill {
+      display: inline-block;
+      font-size: 0.78rem;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: var(--card-light);
+      color: #f8fafc;
+      width: fit-content;
+    }
+
+    .rank-1 .rank-pill {
+      background: #fbbf24;
+      color: #0f172a;
+    }
+
+    .rank-2 .rank-pill {
+      background: #cbd5e1;
+      color: #0f172a;
+    }
+
+    .rank-3 .rank-pill {
+      background: #d97706;
+      color: #fff;
+    }
+
+    .top5-student {
+      font-weight: 600;
+      font-size: 0.95rem;
+    }
+
+    .top5-score {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: #34d399;
+    }
+
+    .top5-meta {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    /* Full List Table (Total Only) */
+    .all-scores-wrapper {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: #0f172a;
+      overflow: hidden;
+    }
+
+    .all-scores-table-head,
+    .score-row-item {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      padding: 11px 16px;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .all-scores-table-head {
+      background: #1e293b;
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: #cbd5e1;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .score-row-item {
+      font-size: 0.92rem;
+      border-bottom: 1px solid rgba(51, 65, 85, 0.55);
+    }
+
+    .score-row-item:last-child {
+      border-bottom: none;
+    }
+
+    .score-row-item:nth-child(even) {
+      background: rgba(30, 41, 59, 0.35);
+    }
+
+    .row-total {
+      font-weight: 700;
+      color: #34d399;
+      text-align: right;
+    }
+
+    /* Header */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .student-badge {
+      background: var(--primary);
+      padding: 7px 18px;
+      border-radius: 999px;
+      font-weight: 600;
+      font-size: 1.05rem;
+    }
+
+    /* Stable Video Stage */
+    .video-stage {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .nav-arrow {
+      background: var(--card-light);
+      color: white;
+      border: 1px solid #475569;
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      font-size: 1.35rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s ease, transform 0.15s ease;
+      flex-shrink: 0;
+    }
+
+    .nav-arrow:hover:not(:disabled) {
+      background: var(--primary);
+      border-color: var(--primary);
+      transform: scale(1.05);
+    }
+
+    .nav-arrow:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+    }
+
+    .video-wrapper {
+      position: relative;
+      flex: 1 1 auto;
+      min-width: 0;
+      width: 100%;
+      height: 540px;
+      background: #020617;
+      border-radius: 14px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      contain: layout style;
+    }
+
+    .video-wrapper iframe {
+      display: block;
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+
+    @media (max-width: 720px) {
+      body {
+        padding: 8px;
+      }
+
+      .container {
+        padding: 14px;
+        border-radius: 16px;
+      }
+
+      .video-stage {
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 10px;
+      }
+
+      .video-wrapper {
+        order: 1;
+        flex: 0 0 100%;
+        width: 100%;
+        height: 480px;
+      }
+
+      .video-stage .nav-arrow {
+        order: 2;
+        width: 64px;
+        height: 42px;
+        border-radius: 12px;
+        font-size: 1.1rem;
+      }
+    }
+
+    /* Action Area */
+    .action-area {
+      text-align: center;
+      margin-top: 8px;
+    }
+
+    .btn-main-score {
+      background: linear-gradient(135deg, #6366f1, #4f46e5);
+      color: white;
+      border: none;
+      padding: 14px 36px;
+      font-size: 1.15rem;
+      font-weight: 600;
+      border-radius: 14px;
+      cursor: pointer;
+      box-shadow: 0 8px 20px rgba(79, 70, 229, 0.35);
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .btn-main-score:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 24px rgba(79, 70, 229, 0.5);
+    }
+
+    /* Teacher Selection */
+    .teacher-panel {
+      display: none;
+      margin-top: 16px;
+      padding: 20px;
+      background: rgba(15, 23, 42, 0.6);
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      animation: fadeIn 0.2s ease;
+    }
+
+    .teacher-panel h3 {
+      margin: 0 0 14px 0;
+      font-size: 1.1rem;
+      color: #e2e8f0;
+    }
+
+    .teacher-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+    }
+
+    @media (max-width: 600px) {
+      .teacher-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    .teacher-btn {
+      background: var(--card-light);
+      color: var(--text);
+      border: 2px solid transparent;
+      padding: 12px 10px;
+      border-radius: 12px;
+      font-size: 1rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: border-color 0.15s ease, background 0.15s ease;
+    }
+
+    .teacher-btn:hover {
+      border-color: var(--primary);
+    }
+
+    .teacher-btn.active {
+      background: var(--primary);
+      border-color: #818cf8;
+      font-weight: 600;
+    }
+
+    .teacher-btn .status-dot {
+      display: block;
+      font-size: 0.78rem;
+      color: var(--accent);
+      margin-top: 3px;
+    }
+
+    .teacher-btn.active .status-dot {
+      color: #d1fae5;
+    }
+
+    /* Scoring Bar with Up/Down Arrows */
+    .scoring-panel {
+      display: none;
+      margin-top: 18px;
+      padding: 20px;
+      background: #0f172a;
+      border-radius: 16px;
+      border: 1px solid #475569;
+      animation: fadeIn 0.2s ease;
+    }
+
+    .scoring-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .scoring-header-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .scoring-header span {
+      font-weight: 600;
+      color: #a5b4fc;
+      font-size: 1.05rem;
+    }
+
+    .scoring-header-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-left: auto;
+    }
+
+    .total-badge {
+      background: rgba(16, 185, 129, 0.15);
+      color: #34d399;
+      padding: 4px 12px;
+      border-radius: 8px;
+      font-weight: 600;
+    }
+
+    .btn-switch-teacher {
+      background: var(--card-light);
+      color: #f8fafc;
+      border: 1px solid #64748b;
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.15s ease, border-color 0.15s ease;
+    }
+
+    .btn-switch-teacher:hover {
+      background: var(--primary);
+      border-color: var(--primary);
+    }
+
+    .criteria-list {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+
+    @media (max-width: 720px) {
+      .criteria-list {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .criteria-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--card);
+      padding: 12px 16px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+    }
+
+    .criteria-info {
+      text-align: left;
+    }
+
+    .criteria-title {
+      font-weight: 500;
+      font-size: 0.98rem;
+    }
+
+    .criteria-sub {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+    }
+
+    /* Score Stepper (Box + Up/Down Arrows) */
+    .score-stepper {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .score-display {
+      width: 74px;
+      height: 48px;
+      background: #020617;
+      border: 2px solid var(--primary);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #fff;
+      user-select: none;
+    }
+
+    .stepper-arrows {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .arrow-up-down {
+      width: 36px;
+      height: 22px;
+      background: var(--card-light);
+      color: white;
+      border: 1px solid #475569;
+      border-radius: 6px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      transition: background 0.15s ease, transform 0.1s ease;
+      user-select: none;
+    }
+
+    .arrow-up-down:hover {
+      background: var(--primary);
+      border-color: var(--primary);
+    }
+
+    .arrow-up-down:active {
+      transform: scale(0.92);
+    }
+
+    .save-notice {
+      margin-top: 14px;
+      font-size: 0.85rem;
+      color: var(--accent);
+      text-align: right;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ส่วนบน: สรุปผลคะแนน -->
+  <div class="container" id="summaryBoard">
+    <div class="summary-header">
+      <h2>สรุปผลคะแนน</h2>
+    </div>
+
+    <!-- แยกอันดับ 5 คนแรก (แสดงเมื่อมีครูอย่างน้อย 1 ท่านให้คะแนนครบทั้ง 15 คน) -->
+    <div class="top5-box">
+      <div class="top5-title">
+        <span>🏆 5 อันดับแรก</span>
+      </div>
+      <div id="top5Content"></div>
+    </div>
+
+    <!-- ลิสต์นักเรียนทั้งหมด แสดงเฉพาะคะแนนรวม -->
+    <div class="all-scores-wrapper">
+      <div class="all-scores-table-head">
+        <div>ผู้เข้าประกวด (ชื่อ / ชั้น)</div>
+        <div>คะแนนรวม</div>
+      </div>
+      <div id="allScoresList"></div>
+    </div>
+  </div>
+
+  <!-- ส่วนล่าง: ช่องประเมินและเครื่องเล่นคลิป -->
+  <div class="container">
+    <div class="header">
+      <div class="student-badge" id="studentLabel">1. ต้นปาล์ม 5/1 — [1 / 15]</div>
+    </div>
+
+    <div class="video-stage">
+      <button class="nav-arrow" id="prevBtn" onclick="changeStudent(-1)" title="คนก่อนหน้า">◀</button>
+      <div class="video-wrapper">
+        <iframe id="videoFrame" allow="autoplay; fullscreen" allowfullscreen></iframe>
+      </div>
+      <button class="nav-arrow" id="nextBtn" onclick="changeStudent(1)" title="คนถัดไป">▶</button>
+    </div>
+
+    <div class="action-area">
+      <button class="btn-main-score" id="startScoreBtn" onclick="openTeacherSelect()">
+        ⭐ ให้คะแนน
+      </button>
+
+      <div class="teacher-panel" id="teacherPanel">
+        <h3>ครูท่านใดให้คะแนน?</h3>
+        <div class="teacher-grid" id="teacherGrid"></div>
+      </div>
+
+      <div class="scoring-panel" id="scoringPanel">
+        <div class="scoring-header">
+          <div class="scoring-header-left">
+            <span id="activeTeacherTitle">ผู้ให้คะแนน: -</span>
+            <div class="total-badge" id="totalScoreBadge">รวมครูคนนี้: 0.0 / 40.0 คะแนน</div>
+          </div>
+          <div class="scoring-header-right">
+            <button class="btn-switch-teacher" onclick="openTeacherSelect()">ครูท่านอื่น</button>
+          </div>
+        </div>
+
+        <div class="criteria-list">
+          <!-- 1 -->
+          <div class="criteria-row">
+            <div class="criteria-info">
+              <div class="criteria-title">1. ความตรงของเสียง</div>
+              <div class="criteria-sub">เต็ม 10.0 คะแนน (เพิ่ม/ลดทีละ 0.5)</div>
+            </div>
+            <div class="score-stepper">
+              <div class="score-display" id="score-pitch">0.0</div>
+              <div class="stepper-arrows">
+                <button class="arrow-up-down" onclick="adjustScore('pitch', 0.5)" title="เพิ่ม 0.5">▲</button>
+                <button class="arrow-up-down" onclick="adjustScore('pitch', -0.5)" title="ลด 0.5">▼</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 2 -->
+          <div class="criteria-row">
+            <div class="criteria-info">
+              <div class="criteria-title">2. ความชัดของคำ</div>
+              <div class="criteria-sub">เต็ม 10.0 คะแนน (เพิ่ม/ลดทีละ 0.5)</div>
+            </div>
+            <div class="score-stepper">
+              <div class="score-display" id="score-articulation">0.0</div>
+              <div class="stepper-arrows">
+                <button class="arrow-up-down" onclick="adjustScore('articulation', 0.5)" title="เพิ่ม 0.5">▲</button>
+                <button class="arrow-up-down" onclick="adjustScore('articulation', -0.5)" title="ลด 0.5">▼</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 3 -->
+          <div class="criteria-row">
+            <div class="criteria-info">
+              <div class="criteria-title">3. ความมั่นใจ</div>
+              <div class="criteria-sub">เต็ม 10.0 คะแนน (เพิ่ม/ลดทีละ 0.5)</div>
+            </div>
+            <div class="score-stepper">
+              <div class="score-display" id="score-confidence">0.0</div>
+              <div class="stepper-arrows">
+                <button class="arrow-up-down" onclick="adjustScore('confidence', 0.5)" title="เพิ่ม 0.5">▲</button>
+                <button class="arrow-up-down" onclick="adjustScore('confidence', -0.5)" title="ลด 0.5">▼</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 4 -->
+          <div class="criteria-row">
+            <div class="criteria-info">
+              <div class="criteria-title">4. สเน่ห์ของเสียง</div>
+              <div class="criteria-sub">เต็ม 10.0 คะแนน (เพิ่ม/ลดทีละ 0.5)</div>
+            </div>
+            <div class="score-stepper">
+              <div class="score-display" id="score-charm">0.0</div>
+              <div class="stepper-arrows">
+                <button class="arrow-up-down" onclick="adjustScore('charm', 0.5)" title="เพิ่ม 0.5">▲</button>
+                <button class="arrow-up-down" onclick="adjustScore('charm', -0.5)" title="ลด 0.5">▼</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="save-notice" id="saveNotice">✓ บันทึกคะแนนอัตโนมัติแล้ว</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const students = [
+      { id: "001", name: "ต้นปาล์ม 5/1", fileId: "1DUZ6sXYISPPKtsKQBkbMQFwCM4g0nlxX" },
+      { id: "002", name: "ใบภาย 6/2", fileId: "1LiCyEdevJrTVWDy7RY7g4p0oR_0E7yts" },
+      { id: "003", name: "นลิน ป. 6/1", fileId: "1QCRt8XKaqfrslIDbYQGoLMdH_ECpTvAW" },
+      { id: "004", name: "แป้งหอม 3/1", fileId: "1a4qNdGcQbK2fp33kF9NC3-hT5f3YipRU" },
+      { id: "005", name: "ชราป 3/1", fileId: "1mGKveP8yP3DLSiXuIuxNK3Z-NROZHj3o" },
+      { id: "006", name: "สเกล 3/1", fileId: "1cmb7ooeSRt8X-W6Y6JdkxLCUsC1CIAJJ" },
+      { id: "007", name: "ใยไหม 4/2", fileId: "1r1qQpJxSdyFQSSiGO4aFxMdK1UnVFcC5" },
+      { id: "008", name: "เกตุแก้ว 6/1", fileId: "1epvQ6h_elHbBh1BDAo97mjL5ROFVtNpO" },
+      { id: "009", name: "โบนัส 3/3", fileId: "1XbPXDtZalpwADmmJa_B2ow3z4GYLvbyN" },
+      { id: "010", name: "แบม 5/1", fileId: "1rkxtcsu4p6PmJZqRRP_uKbCfm2lRFXad" },
+      { id: "011", name: "จูเนีย 5/1", fileId: "1KzrBgn3BrUkU7AklOEMkbzGhArknaBsG" },
+      { id: "012", name: "ติวเตอร์ 4/1", fileId: "1rlMSLzFOHkmDfNSOvaB2FYnj900cCzCC" },
+      { id: "013", name: "พิตต้า 6/3", fileId: "15VPibRn7ccOZ5eDfk26kGJ9Irh6CSsmw" },
+      { id: "014", name: "เรนโบว์ 4/2", fileId: "1uIwyLwJCfFx7Zk6pN393KqqDfluceqfV" },
+      { id: "015", name: "ขนม 6/2", fileId: "1oY6YZCXjHsJ6AGDdLuStuh4eLHKwLSCN" }
+    ];
+
+    const teachers = ["ครูอ๋อง", "ครูนะ", "ครูก้อง", "ครูแม็ก"];
+    const STORAGE_KEY = "singing_contest_scores_v2";
+
+    let currentIndex = 0;
+    let selectedTeacher = null;
+    let scoresData = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
+
+    function fmt(num) {
+      return (Math.round(num * 10) / 10).toFixed(1);
+    }
+
+    function getStudentScoreObj(studentId, teacherName) {
+      if (!scoresData[studentId]) scoresData[studentId] = {};
+      if (!scoresData[studentId][teacherName]) {
+        scoresData[studentId][teacherName] = {
+          pitch: 0,
+          articulation: 0,
+          confidence: 0,
+          charm: 0,
+          graded: false
+        };
+      }
+      const obj = scoresData[studentId][teacherName];
+      if (typeof obj.charm !== "number") obj.charm = 0;
+      return obj;
+    }
+
+    function getTeacherTotal(studentId, teacherName) {
+      const rec = scoresData[studentId]?.[teacherName];
+      if (!rec) return 0;
+      return (
+        (rec.pitch || 0) +
+        (rec.articulation || 0) +
+        (rec.confidence || 0) +
+        (rec.charm || 0)
+      );
+    }
+
+    function getAllTeachersTotal(studentId) {
+      return teachers.reduce((sum, t) => sum + getTeacherTotal(studentId, t), 0);
+    }
+
+    function getGradedTeachersCount(studentId) {
+      return teachers.filter((t) => scoresData[studentId]?.[t]?.graded).length;
+    }
+
+    function hasAtLeastOneTeacherCompletedAll() {
+      return teachers.some((teacher) =>
+        students.every((student) => Boolean(scoresData[student.id]?.[teacher]?.graded))
+      );
+    }
+
+    function saveToStorage() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(scoresData));
+      renderSummaryBoard();
+    }
+
+    function loadStudent(index) {
+      currentIndex = index;
+      const student = students[currentIndex];
+      const iframe = document.getElementById("videoFrame");
+
+      document.getElementById("studentLabel").textContent =
+        `${currentIndex + 1}. ${student.name} — [${currentIndex + 1} / ${students.length}]`;
+
+      const nextSrc = `https://drive.google.com/file/d/${student.fileId}/preview`;
+      if (iframe.getAttribute("data-current-src") !== nextSrc) {
+        iframe.setAttribute("data-current-src", nextSrc);
+        iframe.src = nextSrc;
+      }
+
+      document.getElementById("prevBtn").disabled = currentIndex === 0;
+      document.getElementById("nextBtn").disabled = currentIndex === students.length - 1;
+
+      selectedTeacher = null;
+      document.getElementById("startScoreBtn").style.display = "inline-block";
+      document.getElementById("teacherPanel").style.display = "none";
+      document.getElementById("scoringPanel").style.display = "none";
+    }
+
+    function changeStudent(step) {
+      const nextIdx = currentIndex + step;
+      if (nextIdx >= 0 && nextIdx < students.length) {
+        loadStudent(nextIdx);
+      }
+    }
+
+    function openTeacherSelect() {
+      document.getElementById("startScoreBtn").style.display = "none";
+      document.getElementById("scoringPanel").style.display = "none";
+      document.getElementById("teacherPanel").style.display = "block";
+      renderTeacherButtons();
+    }
+
+    function renderTeacherButtons() {
+      const grid = document.getElementById("teacherGrid");
+      const student = students[currentIndex];
+      grid.innerHTML = "";
+
+      teachers.forEach((teacher) => {
+        const record = scoresData[student.id]?.[teacher];
+        const isGraded = record && record.graded;
+        const total = isGraded ? getTeacherTotal(student.id, teacher) : 0;
+
+        const btn = document.createElement("button");
+        btn.className = "teacher-btn" + (selectedTeacher === teacher ? " active" : "");
+        btn.innerHTML = `
+          <div>${teacher}</div>
+          <span class="status-dot">${isGraded ? `✓ ให้แล้ว (${fmt(total)}/40.0)` : "รอให้คะแนน"}</span>
+        `;
+        btn.onclick = () => selectTeacher(teacher);
+        grid.appendChild(btn);
+      });
+    }
+
+    function selectTeacher(teacher) {
+      selectedTeacher = teacher;
+
+      const student = students[currentIndex];
+      const record = getStudentScoreObj(student.id, teacher);
+      record.graded = true;
+      saveToStorage();
+
+      document.getElementById("teacherPanel").style.display = "none";
+      document.getElementById("activeTeacherTitle").textContent = `ผู้ให้คะแนน: ${teacher}`;
+      document.getElementById("scoringPanel").style.display = "block";
+      updateScoreDisplay();
+    }
+
+    function adjustScore(category, delta) {
+      if (!selectedTeacher) return;
+      const student = students[currentIndex];
+      const record = getStudentScoreObj(student.id, selectedTeacher);
+
+      let newVal = Math.round((record[category] + delta) * 10) / 10;
+      if (newVal < 0) newVal = 0;
+      if (newVal > 10) newVal = 10;
+
+      record[category] = newVal;
+      record.graded = true;
+      saveToStorage();
+
+      updateScoreDisplay();
+
+      const notice = document.getElementById("saveNotice");
+      notice.textContent = "✓ บันทึกคะแนนเรียบร้อย";
+      setTimeout(() => {
+        notice.textContent = "✓ บันทึกคะแนนอัตโนมัติแล้ว";
+      }, 1000);
+    }
+
+    function updateScoreDisplay() {
+      const student = students[currentIndex];
+      const record = getStudentScoreObj(student.id, selectedTeacher);
+
+      document.getElementById("score-pitch").textContent = fmt(record.pitch);
+      document.getElementById("score-articulation").textContent = fmt(record.articulation);
+      document.getElementById("score-confidence").textContent = fmt(record.confidence);
+      document.getElementById("score-charm").textContent = fmt(record.charm);
+
+      const total = getTeacherTotal(student.id, selectedTeacher);
+      document.getElementById("totalScoreBadge").textContent =
+        `รวมครูคนนี้: ${fmt(total)} / 40.0 คะแนน`;
+    }
+
+    function renderSummaryBoard() {
+      const top5Content = document.getElementById("top5Content");
+
+      if (!hasAtLeastOneTeacherCompletedAll()) {
+        top5Content.innerHTML = `<div class="waiting-rank-box">รอผลคะแนน</div>`;
+      } else {
+        const ranked = students
+          .map((st) => ({
+            ...st,
+            totalAll: getAllTeachersTotal(st.id),
+            gradedCount: getGradedTeachersCount(st.id)
+          }))
+          .sort((a, b) => b.totalAll - a.totalAll || a.id.localeCompare(b.id));
+
+        const medals = ["🥇 อันดับ 1", "🥈 อันดับ 2", "🥉 อันดับ 3", "🏅 อันดับ 4", "🏅 อันดับ 5"];
+        const cardsHtml = ranked
+          .slice(0, 5)
+          .map(
+            (item, idx) => `
+              <div class="top5-card rank-${idx + 1}">
+                <span class="rank-pill">${medals[idx]}</span>
+                <div class="top5-student">${item.name}</div>
+                <div class="top5-score">${fmt(item.totalAll)} <span style="font-size:0.78rem;font-weight:400;color:#94a3b8;">/ 160.0</span></div>
+                <div class="top5-meta">ครูให้แล้ว ${item.gradedCount} / 4 ท่าน</div>
+              </div>
+            `
+          )
+          .join("");
+
+        top5Content.innerHTML = `<div class="top5-grid">${cardsHtml}</div>`;
+      }
+
+      const listEl = document.getElementById("allScoresList");
+      listEl.innerHTML = students
+        .map((st, idx) => {
+          const totalAll = getAllTeachersTotal(st.id);
+          return `
+            <div class="score-row-item">
+              <div><strong>${idx + 1}. ${st.name}</strong></div>
+              <div class="row-total">${fmt(totalAll)} / 160.0</div>
+            </div>
+          `;
+        })
+        .join("");
+    }
+
+    loadStudent(0);
+    renderSummaryBoard();
+  </script>
+</body>
+</html>
