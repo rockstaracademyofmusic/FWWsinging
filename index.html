@@ -791,10 +791,21 @@
       document.getElementById("prevBtn").disabled = currentIndex === 0;
       document.getElementById("nextBtn").disabled = currentIndex === students.length - 1;
 
-      selectedTeacher = null;
-      document.getElementById("startScoreBtn").style.display = "inline-block";
       document.getElementById("teacherPanel").style.display = "none";
-      document.getElementById("scoringPanel").style.display = "none";
+
+      // คงหน้าแถบให้คะแนนของครูที่กำลังให้คะแนนอยู่ เมื่อเลื่อนไปยังคลิปถัดไปหรือก่อนหน้า
+      if (selectedTeacher) {
+        const record = getStudentScoreObj(student.id, selectedTeacher);
+        record.graded = true;
+        saveToStorage();
+        document.getElementById("startScoreBtn").style.display = "none";
+        document.getElementById("activeTeacherTitle").textContent = `ผู้ให้คะแนน: ${selectedTeacher}`;
+        document.getElementById("scoringPanel").style.display = "block";
+        updateScoreDisplay();
+      } else {
+        document.getElementById("startScoreBtn").style.display = "inline-block";
+        document.getElementById("scoringPanel").style.display = "none";
+      }
     }
 
     function changeStudent(step) {
