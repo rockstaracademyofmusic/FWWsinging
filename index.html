@@ -52,12 +52,23 @@
       justify-content: space-between;
       align-items: center;
       margin-bottom: 14px;
+      flex-wrap: wrap;
+      gap: 8px;
     }
 
     .summary-header h2 {
       margin: 0;
       font-size: 1.3rem;
       color: #f8fafc;
+    }
+
+    .sync-status {
+      font-size: 0.82rem;
+      color: #34d399;
+      background: rgba(15, 23, 42, 0.7);
+      padding: 4px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
     }
 
     /* Top 5 Separated Box */
@@ -576,6 +587,7 @@
   <div class="container" id="summaryBoard">
     <div class="summary-header">
       <h2>สรุปผลคะแนน</h2>
+      <div class="sync-status" id="syncStatus">กำลังซิงค์กับ Google Sheets...</div>
     </div>
 
     <!-- แยกอันดับ 5 คนแรก (แสดงเมื่อมีครูอย่างน้อย 1 ท่านให้คะแนนครบทั้ง 15 คน) -->
@@ -693,12 +705,15 @@
           </div>
         </div>
 
-        <div class="save-notice" id="saveNotice">✓ บันทึกคะแนนอัตโนมัติแล้ว</div>
+        <div class="save-notice" id="saveNotice">✓ ซิงค์กับ Google Sheets อัตโนมัติ</div>
       </div>
     </div>
   </div>
 
   <script>
+    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxQ1F_kNR2QvCJ_G17ynelq-c5jsU5laFK9xorJ_O4Hgg8Qo4MctAIX5_Y6TxRhZrEk/exec";
+    const POLL_INTERVAL_MS = 5000;
+
     const students = [
       { id: "001", name: "ต้นปาล์ม 5/1", fileId: "1DUZ6sXYISPPKtsKQBkbMQFwCM4g0nlxX" },
       { id: "002", name: "ใบภาย 6/2", fileId: "1LiCyEdevJrTVWDy7RY7g4p0oR_0E7yts" },
@@ -723,9 +738,16 @@
     let currentIndex = 0;
     let selectedTeacher = null;
     let scoresData = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
+    let isSaving = false;
 
     function fmt(num) {
       return (Math.round(num * 10) / 10).toFixed(1);
+    }
+
+    function setSyncStatus(text, isError = false) {
+      const el = document.getElementById("syncStatus");
+      el.textContent = text;
+      el.style.color = isError ? "#f87171" : "#34d399";
     }
 
     function getStudentScoreObj(studentId, teacherName) {
@@ -769,9 +791,59 @@
       );
     }
 
-    function saveToStorage() {
+    function saveLocalCache() {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(scoresData));
       renderSummaryBoard();
+    }
+
+    async function pushScoreToSheet(studentId, teacherName) {
+      const student = students.find((s) => s.id === studentId);
+      const rec = getStudentScoreObj(studentId, teacherName);
+
+      isSaving = true;
+      setSyncStatus("กำลังบันทึกขึ้นชีต...");
+      try {
+        await fetch(APPS_SCRIPT_URL, {
+          method: "POST",
+          mode: "no-cors",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify({
+            studentId,
+            studentName: student ? student.name : "",
+            teacher: teacherName,
+            pitch: rec.pitch,
+            articulation: rec.articulation,
+            confidence: rec.confidence,
+            charm: rec.charm,
+            graded: rec.graded
+          })
+        });
+        setSyncStatus("อัปเดตล่าสุดแล้ว");
+      } catch (err) {
+        setSyncStatus("บันทึกชั่วคราวในเครื่อง", true);
+      } finally {
+        isSaving = false;
+      }
+    }
+
+    async function fetchScoresFromSheet() {
+      if (isSaving) return;
+
+      try {
+        const res = await fetch(`${APPS_SCRIPT_URL}?t=${Date.now()}`, { cache: "no-store" });
+        const json = await res.json();
+        if (json && json.ok && json.scoresData) {
+          scoresData = json.scoresData;
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(scoresData));
+          renderSummaryBoard();
+          if (selectedTeacher) {
+            updateScoreDisplay();
+          }
+          setSyncStatus("ซิงค์ออนไลน์เรียบร้อย");
+        }
+      } catch (err) {
+        setSyncStatus("รอเชื่อมต่อชีต...", true);
+      }
     }
 
     function loadStudent(index) {
@@ -793,11 +865,11 @@
 
       document.getElementById("teacherPanel").style.display = "none";
 
-      // คงหน้าแถบให้คะแนนของครูที่กำลังให้คะแนนอยู่ เมื่อเลื่อนไปยังคลิปถัดไปหรือก่อนหน้า
       if (selectedTeacher) {
         const record = getStudentScoreObj(student.id, selectedTeacher);
         record.graded = true;
-        saveToStorage();
+        saveLocalCache();
+        pushScoreToSheet(student.id, selectedTeacher);
         document.getElementById("startScoreBtn").style.display = "none";
         document.getElementById("activeTeacherTitle").textContent = `ผู้ให้คะแนน: ${selectedTeacher}`;
         document.getElementById("scoringPanel").style.display = "block";
@@ -849,7 +921,8 @@
       const student = students[currentIndex];
       const record = getStudentScoreObj(student.id, teacher);
       record.graded = true;
-      saveToStorage();
+      saveLocalCache();
+      pushScoreToSheet(student.id, teacher);
 
       document.getElementById("teacherPanel").style.display = "none";
       document.getElementById("activeTeacherTitle").textContent = `ผู้ให้คะแนน: ${teacher}`;
@@ -868,15 +941,16 @@
 
       record[category] = newVal;
       record.graded = true;
-      saveToStorage();
+      saveLocalCache();
+      pushScoreToSheet(student.id, selectedTeacher);
 
       updateScoreDisplay();
 
       const notice = document.getElementById("saveNotice");
-      notice.textContent = "✓ บันทึกคะแนนเรียบร้อย";
+      notice.textContent = "✓ บันทึกคะแนนขึ้น Google Sheets แล้ว";
       setTimeout(() => {
-        notice.textContent = "✓ บันทึกคะแนนอัตโนมัติแล้ว";
-      }, 1000);
+        notice.textContent = "✓ ซิงค์กับ Google Sheets อัตโนมัติ";
+      }, 1200);
     }
 
     function updateScoreDisplay() {
@@ -941,6 +1015,8 @@
 
     loadStudent(0);
     renderSummaryBoard();
+    fetchScoresFromSheet();
+    setInterval(fetchScoresFromSheet, POLL_INTERVAL_MS);
   </script>
 </body>
 </html>
