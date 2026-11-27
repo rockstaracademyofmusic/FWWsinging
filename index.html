@@ -711,8 +711,8 @@
   </div>
 
   <script>
-    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxQ1F_kNR2QvCJ_G17ynelq-c5jsU5laFK9xorJ_O4Hgg8Qo4MctAIX5_Y6TxRhZrEk/exec";
-    const POLL_INTERVAL_MS = 5000;
+    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyG3T30U6LQzEKo625dkIdCTwddgGq_z5zEx5Gig4iCCIT-yTrFpakczi511o9Xkhai/exec";
+    const POLL_INTERVAL_MS = 6000;
 
     const students = [
       { id: "001", name: "ต้นปาล์ม 5/1", fileId: "1DUZ6sXYISPPKtsKQBkbMQFwCM4g0nlxX" },
@@ -738,7 +738,11 @@
     let currentIndex = 0;
     let selectedTeacher = null;
     let scoresData = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
-    let isSaving = false;
+    const dirtyKeys = new Set();
+
+    function makeKey(studentId, teacherName) {
+      return `${studentId}__${teacherName}`;
+    }
 
     function fmt(num) {
       return (Math.round(num * 10) / 10).toFixed(1);
@@ -797,15 +801,16 @@
     }
 
     async function pushScoreToSheet(studentId, teacherName) {
+      const key = makeKey(studentId, teacherName);
+      dirtyKeys.add(key);
+
       const student = students.find((s) => s.id === studentId);
       const rec = getStudentScoreObj(studentId, teacherName);
 
-      isSaving = true;
       setSyncStatus("กำลังบันทึกขึ้นชีต...");
       try {
-        await fetch(APPS_SCRIPT_URL, {
+        const res = await fetch(APPS_SCRIPT_URL, {
           method: "POST",
-          mode: "no-cors",
           headers: { "Content-Type": "text/plain;charset=utf-8" },
           body: JSON.stringify({
             studentId,
@@ -818,28 +823,49 @@
             graded: rec.graded
           })
         });
-        setSyncStatus("อัปเดตล่าสุดแล้ว");
+        const json = await res.json();
+        if (json && json.ok) {
+          dirtyKeys.delete(key);
+          setSyncStatus("บันทึกลงชีตแล้ว");
+        } else {
+          setSyncStatus("บันทึกชีตไม่สำเร็จ", true);
+        }
       } catch (err) {
         setSyncStatus("บันทึกชั่วคราวในเครื่อง", true);
-      } finally {
-        isSaving = false;
       }
     }
 
-    async function fetchScoresFromSheet() {
-      if (isSaving) return;
+    function mergeRemoteScores(remoteData) {
+      const merged = {};
+      Object.keys(remoteData || {}).forEach((stId) => {
+        merged[stId] = { ...remoteData[stId] };
+      });
 
+      dirtyKeys.forEach((key) => {
+        const [stId, teacherName] = key.split("__");
+        if (scoresData[stId] && scoresData[stId][teacherName]) {
+          if (!merged[stId]) merged[stId] = {};
+          merged[stId][teacherName] = { ...scoresData[stId][teacherName] };
+        }
+      });
+
+      return merged;
+    }
+
+    async function fetchScoresFromSheet() {
       try {
         const res = await fetch(`${APPS_SCRIPT_URL}?t=${Date.now()}`, { cache: "no-store" });
         const json = await res.json();
         if (json && json.ok && json.scoresData) {
-          scoresData = json.scoresData;
+          scoresData = mergeRemoteScores(json.scoresData);
           localStorage.setItem(STORAGE_KEY, JSON.stringify(scoresData));
           renderSummaryBoard();
           if (selectedTeacher) {
             updateScoreDisplay();
           }
-          setSyncStatus("ซิงค์ออนไลน์เรียบร้อย");
+          if (dirtyKeys.size === 0) {
+            setSyncStatus("ซิงค์ออนไลน์เรียบร้อย");
+          }
         }
       } catch (err) {
         setSyncStatus("รอเชื่อมต่อชีต...", true);
@@ -947,7 +973,7 @@
       updateScoreDisplay();
 
       const notice = document.getElementById("saveNotice");
-      notice.textContent = "✓ บันทึกคะแนนขึ้น Google Sheets แล้ว";
+      notice.textContent = "✓ กำลังบันทึกลง Google Sheets...";
       setTimeout(() => {
         notice.textContent = "✓ ซิงค์กับ Google Sheets อัตโนมัติ";
       }, 1200);
