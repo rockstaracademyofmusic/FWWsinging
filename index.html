@@ -265,12 +265,14 @@
     /* Unsaved Alert Banner */
     .unsaved-alert {
       display: none;
+      margin-top: 14px;
       margin-bottom: 14px;
       padding: 14px 16px;
       border-radius: 14px;
       background: rgba(245, 158, 11, 0.14);
       border: 1px solid #f59e0b;
       color: #fde68a;
+      animation: fadeIn 0.2s ease;
     }
 
     .unsaved-alert-title {
@@ -320,7 +322,7 @@
       display: flex;
       align-items: center;
       gap: 12px;
-      margin-bottom: 18px;
+      margin-bottom: 14px;
     }
 
     .nav-arrow {
@@ -491,7 +493,7 @@
     /* Scoring Bar */
     .scoring-panel {
       display: none;
-      margin-top: 18px;
+      margin-top: 14px;
       padding: 20px;
       background: #0f172a;
       border-radius: 16px;
@@ -753,7 +755,15 @@
       <div class="student-badge" id="studentLabel">1. ต้นปาล์ม 5/1 — [1 / 15]</div>
     </div>
 
-    <!-- กล่องเตือนเมื่อกำลังแก้ไขคะแนนอยู่แล้วกดเปลี่ยนคลิป -->
+    <div class="video-stage">
+      <button class="nav-arrow" id="prevBtn" onclick="requestChangeStudent(-1)" title="คนก่อนหน้า">◀</button>
+      <div class="video-wrapper">
+        <iframe id="videoFrame" allow="autoplay; fullscreen" allowfullscreen></iframe>
+      </div>
+      <button class="nav-arrow" id="nextBtn" onclick="requestChangeStudent(1)" title="คนถัดไป">▶</button>
+    </div>
+
+    <!-- กล่องเตือนอยู่ล่างคลิป เหนือกล่องให้คะแนน -->
     <div class="unsaved-alert" id="unsavedAlert">
       <div class="unsaved-alert-title" id="unsavedAlertText">
         ⚠️ คุณกำลังแก้ไขคะแนนอยู่ กรุณากด "บันทึกคะแนน" ก่อนเปลี่ยนคลิป
@@ -763,14 +773,6 @@
         <button class="btn-alert-discard" onclick="discardAndNavigate()">ไม่บันทึกและเปลี่ยนคลิป</button>
         <button class="btn-alert-stay" onclick="cancelNavigationPrompt()">อยู่หน้านี้ต่อ</button>
       </div>
-    </div>
-
-    <div class="video-stage">
-      <button class="nav-arrow" id="prevBtn" onclick="requestChangeStudent(-1)" title="คนก่อนหน้า">◀</button>
-      <div class="video-wrapper">
-        <iframe id="videoFrame" allow="autoplay; fullscreen" allowfullscreen></iframe>
-      </div>
-      <button class="nav-arrow" id="nextBtn" onclick="requestChangeStudent(1)" title="คนถัดไป">▶</button>
     </div>
 
     <div class="action-area">
@@ -887,11 +889,12 @@
     ];
 
     const teachers = ["ครูอ๋อง", "ครูนะ", "ครูก้อง", "ครูแม็ก"];
-    const STORAGE_KEY = "singing_contest_scores_v3";
+    const STORAGE_KEY = "singing_contest_scores_v4";
 
     let currentIndex = 0;
     let selectedTeacher = null;
     let isEditing = false;
+    let isSaving = false;
     let draftScore = null;
     let pendingAction = null;
     let scoresData = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
@@ -909,14 +912,15 @@
     function getSavedRecord(studentId, teacherName) {
       const rec = scoresData[studentId]?.[teacherName];
       if (!rec) {
-        return { pitch: 0, articulation: 0, confidence: 0, charm: 0, graded: false };
+        return { pitch: 0, articulation: 0, confidence: 0, charm: 0, graded: false, savedAt: 0 };
       }
       return {
         pitch: Number(rec.pitch) || 0,
         articulation: Number(rec.articulation) || 0,
         confidence: Number(rec.confidence) || 0,
         charm: Number(rec.charm) || 0,
-        graded: Boolean(rec.graded)
+        graded: Boolean(rec.graded),
+        savedAt: Number(rec.savedAt) || 0
       };
     }
 
@@ -958,6 +962,7 @@
 
     async function pushScoreToSheet(studentId, teacherName, rec) {
       const student = students.find((s) => s.id === studentId);
+      isSaving = true;
       setSyncStatus("กำลังบันทึกขึ้นชีต...");
 
       try {
@@ -980,22 +985,75 @@
           setSyncStatus("บันทึกลงชีตแล้ว");
           return true;
         }
-        setSyncStatus("บันทึกชีตไม่สำเร็จ", true);
+        setSyncStatus("บันทึกชีตไม่สำเร็จ (เก็บในเครื่อง)", true);
         return false;
       } catch (err) {
         setSyncStatus("บันทึกชั่วคราวในเครื่อง", true);
         return false;
+      } finally {
+        isSaving = false;
       }
     }
 
+    function mergeRemoteWithLocal(remoteData) {
+      const nextData = {};
+      const allStudentIds = new Set([
+        ...Object.keys(scoresData || {}),
+        ...Object.keys(remoteData || {})
+      ]);
+
+      allStudentIds.forEach((stId) => {
+        nextData[stId] = {};
+        const allTeachers = new Set([
+          ...Object.keys(scoresData?.[stId] || {}),
+          ...Object.keys(remoteData?.[stId] || {})
+        ]);
+
+        allTeachers.forEach((teacherName) => {
+          const localRec = scoresData?.[stId]?.[teacherName];
+          const remoteRec = remoteData?.[stId]?.[teacherName];
+
+          const localTotal = sumRecord(localRec);
+          const remoteTotal = sumRecord(remoteRec);
+          const localGraded = Boolean(localRec?.graded);
+          const remoteGraded = Boolean(remoteRec?.graded);
+          const localSavedAt = Number(localRec?.savedAt) || 0;
+
+          if (!remoteRec) {
+            if (localRec) nextData[stId][teacherName] = { ...localRec };
+            return;
+          }
+
+          // ป้องกันไม่ให้ข้อมูลจากชีตที่ยังเป็น 0 / ยังไม่ให้คะแนน เขียนทับคะแนนที่บันทึกไปแล้วในเครื่อง
+          const isRecentLocalSave = localGraded && localSavedAt > 0 && (Date.now() - localSavedAt < 60000);
+          const remoteLooksEmptyWhileLocalHasScore = (!remoteGraded && remoteTotal === 0) && (localGraded || localTotal > 0);
+
+          if (isRecentLocalSave || remoteLooksEmptyWhileLocalHasScore) {
+            nextData[stId][teacherName] = { ...localRec };
+          } else {
+            nextData[stId][teacherName] = {
+              pitch: Number(remoteRec.pitch) || 0,
+              articulation: Number(remoteRec.articulation) || 0,
+              confidence: Number(remoteRec.confidence) || 0,
+              charm: Number(remoteRec.charm) || 0,
+              graded: Boolean(remoteRec.graded || sumRecord(remoteRec) > 0),
+              savedAt: 0
+            };
+          }
+        });
+      });
+
+      return nextData;
+    }
+
     async function fetchScoresFromSheet() {
-      if (isEditing) return;
+      if (isEditing || isSaving) return;
 
       try {
         const res = await fetch(`${APPS_SCRIPT_URL}?t=${Date.now()}`, { cache: "no-store" });
         const json = await res.json();
         if (json && json.ok && json.scoresData) {
-          scoresData = json.scoresData;
+          scoresData = mergeRemoteWithLocal(json.scoresData);
           localStorage.setItem(STORAGE_KEY, JSON.stringify(scoresData));
           renderSummaryBoard();
           if (selectedTeacher) {
@@ -1171,7 +1229,8 @@
         articulation: Number(draftScore.articulation) || 0,
         confidence: Number(draftScore.confidence) || 0,
         charm: Number(draftScore.charm) || 0,
-        graded: true
+        graded: true,
+        savedAt: Date.now()
       };
 
       if (!scoresData[student.id]) scoresData[student.id] = {};
@@ -1182,8 +1241,10 @@
       saveLocalCache();
       renderScoringPanel();
 
-      await pushScoreToSheet(student.id, selectedTeacher, finalRecord);
-      document.getElementById("saveNotice").textContent = "✓ บันทึกคะแนนและซิงค์ขึ้น Google Sheets เรียบร้อย";
+      const ok = await pushScoreToSheet(student.id, selectedTeacher, finalRecord);
+      document.getElementById("saveNotice").textContent = ok
+        ? "✓ บันทึกคะแนนและซิงค์ขึ้น Google Sheets เรียบร้อย"
+        : "✓ บันทึกคะแนนในเครื่องแล้ว (รอการซิงค์ขึ้น Google Sheets)";
     }
 
     function handleScoreActionButton() {
